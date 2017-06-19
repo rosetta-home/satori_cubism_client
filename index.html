@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rosetta Home</title>
+    <script src="js/d3.min.js"></script>
+    <script src="js/cubism.v1.min.js"></script>
+    <script src="js/horizon.js"></script>
+    <script src="js/comparison.js"></script>
+    <script src="config.js"></script>
+    <script src="https://satori-a.akamaihd.net/satori-rtm-sdk/v1.0.2/sdk.min.js"></script>
+    <link href="css/styles.css" rel="stylesheet">
+  </head>
+  <body>
+    <h1>3131 57th Street, Fenville, MI</h1>
+    <div id="stats">
+      <div id="kw"></div>
+      <div id="co2"></div>
+      <div id="wind_speed"></div>
+      <div id="solar_radiation"></div>
+      <div id="temp"></div>
+    </div>
+    <script>
+      var last_value = {};
+      var events = [];
+
+      var context = cubism.context() // set the cubism context
+        .serverDelay(0)
+        .clientDelay(0)
+        .step(60000)
+        .size(960);
+
+      d3.select("#stats").call(function (div) {
+        div.append("div")
+          .attr("class", "axis")
+          .call(context.axis().orient("top"));
+        div.append("div")
+          .attr("class", "rule")
+          .call(context.rule());
+      });
+
+
+      var kw = new Horizon("KW", context, "#kw");
+      var co2 = new Horizon("CO2", context, "#co2");
+      var wind_speed = new Horizon("Wind Speed", context, "#wind_speed");
+      var solar_radiation = new Horizon("Solar Radiation", context, "#solar_radiation");
+      var temp = new Comparison("Temperature", context, "#temp");
+
+      var rtm = new RTM(endpoint, appKey);
+
+      rtm.on("enter-connected", function() {
+        console.log("Connected to RTM.");
+      });
+      rtm.on("leave-connected", function() {
+        console.log("Disconnected from RTM.");
+      });
+
+      var subscription = rtm.subscribe(channel, RTM.SubscriptionMode.SIMPLE);
+
+      subscription.on('rtm/subscription/data', function (pdu) {
+        pdu.body.messages.forEach(function (msg) {
+          if(msg.tags.node_id == "00000000fdf4ffe2"){
+            switch(msg.measurement){
+              case 'smart_meter.kw':
+                kw.data(msg);
+                break;
+              case 'ieq.co2':
+                co2.data(msg);
+                break;
+              case 'weather_station.outdoor_temperature':
+                temp.data(msg);
+                break;
+              case 'weather_station.indoor_temperature':
+                temp.data(msg);
+                break;
+              case 'weather_station.solar.radiation':
+                solar_radiation.data(msg);
+                break;
+              case 'weather_station.wind.speed':
+                wind_speed.data(msg);
+                break;
+            }
+            console.log("Got message: " + JSON.stringify(msg));
+          }
+        });
+      });
+      rtm.start();
+
+    </script>
+
+  </body>
+</html>
