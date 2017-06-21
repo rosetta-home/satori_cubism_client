@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Rosetta Home</title>
+    <script src="js/jquery-2.2.3.min.js"></script>
     <script src="js/d3.min.js"></script>
     <script src="js/cubism.v1.min.js"></script>
     <script src="js/horizon.js"></script>
@@ -11,17 +12,36 @@
     <link href="css/styles.css" rel="stylesheet">
   </head>
   <body>
-    <h1>3131 57th Street, Fenville, MI</h1>
+    <h1 id="property_title">1138 W. Pratt Blvd</h1><span>Be patient, it can take up to a minute for initial data to load</span>
     <div id="stats">
       <div id="kw"></div>
       <div id="co2"></div>
+      <div id="pressure"></div>
       <div id="wind_speed"></div>
       <div id="solar_radiation"></div>
-      <div id="temp"></div>
+      <div id="indoor_temperature"></div>
+      <div id="outdoor_temperature"></div>
+      <div id="hvac_mode"></div>
+      <div id="hvac_state"></div>
     </div>
     <script>
+      $("#property_title").text(title);
       var last_value = {};
       var events = [];
+      var hvac_discrete = {
+        "heat": 20,
+        "cool": 21,
+        "off": 0,
+        "on": 22,
+        "auto": 23,
+      }
+
+      function get_text(value){
+        for(var k in hvac_discrete){
+          var v = hvac_discrete[k];
+          if(v == value) return k;
+        }
+      }
 
       var context = cubism.context() // set the cubism context
         .serverDelay(0)
@@ -42,8 +62,12 @@
       var kw = new Horizon("KW", context, "#kw");
       var co2 = new Horizon("CO2", context, "#co2");
       var wind_speed = new Horizon("Wind Speed", context, "#wind_speed");
+      var pressure = new Horizon("Pressure", context, "#pressure");
+      var hvac_mode = new Horizon("HVAC Mode", context, "#hvac_mode", true);
+      var hvac_state = new Horizon("HVAC State", context, "#hvac_state", true);
       var solar_radiation = new Horizon("Solar Radiation", context, "#solar_radiation");
-      var temp = new Comparison("Temperature", context, "#temp");
+      var indoor_temp = new Horizon("Indoor Temperature", context, "#indoor_temperature");
+      var outdoor_temp = new Horizon("Outdoor Temperature", context, "#outdoor_temperature");
 
       var rtm = new RTM(endpoint, appKey);
 
@@ -58,7 +82,7 @@
 
       subscription.on('rtm/subscription/data', function (pdu) {
         pdu.body.messages.forEach(function (msg) {
-          if(msg.tags.node_id == "00000000fdf4ffe2"){
+          if(msg.tags.node_id == node_id){
             switch(msg.measurement){
               case 'smart_meter.kw':
                 kw.data(msg);
@@ -66,11 +90,24 @@
               case 'ieq.co2':
                 co2.data(msg);
                 break;
+              case 'hvac.state':// discrete view
+                msg.fields.text = msg.fields.value;
+                msg.fields.value = hvac_discrete[msg.fields.value];
+                hvac_state.data(msg);
+                break;
+              case 'hvac.mode':
+                msg.fields.text = msg.fields.value;
+                msg.fields.value = hvac_discrete[msg.fields.value];
+                hvac_mode.data(msg);
+                break;
               case 'weather_station.outdoor_temperature':
-                temp.data(msg);
+                outdoor_temp.data(msg);
                 break;
               case 'weather_station.indoor_temperature':
-                temp.data(msg);
+                indoor_temp.data(msg);
+                break;
+              case 'weather_station.pressure':
+                pressure.data(msg);
                 break;
               case 'weather_station.solar.radiation':
                 solar_radiation.data(msg);
@@ -79,7 +116,6 @@
                 wind_speed.data(msg);
                 break;
             }
-            console.log("Got message: " + JSON.stringify(msg));
           }
         });
       });

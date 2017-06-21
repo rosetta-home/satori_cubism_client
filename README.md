@@ -4,6 +4,8 @@ Satori is a realtime platform for open-data. [https://satori.com](https://satori
 
 Cubism is a visualization library open-sourced by Square, [https://square.github.io/cubism/](https://square.github.io/cubism/)
 
+![Rosetta Home](./assets/satori_cubism.png)
+
 ## Implementation
 
 This system is a bare bones Javascript and HTML implementation of charting Satori data from the [Rosetta Home Satori Channel](https://www.satori.com/channels/rosetta-home) into Cubism Horizon and Comparison charts.

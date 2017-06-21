@@ -31,7 +31,6 @@ Comparison.prototype.create_metric = function(event){
 }
 
 Comparison.prototype.update_data = function(){
-  console.log(this.events);
   var comparison = this.context.comparison();
   comparison.formatPrimary(d3.format(".2f"));
   comparison.title(this.title);
