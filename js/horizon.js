@@ -5,12 +5,6 @@ function Horizon(title, context, dom_id, discrete){
   this.last_value = {};
   this.events = [];
   this.discrete = discrete || false;
-  if(this.discrete){
-    var self = this;
-    this.context.on("focus."+this.dom_id, function(i){
-      self.update_text(i);
-    });
-  }
 }
 
 Horizon.prototype.data = function(event){
@@ -22,14 +16,8 @@ Horizon.prototype.data = function(event){
   }
 }
 
-Horizon.prototype.update_text = function(i){
-  if(this.events.length){
-    //var value = this.events[0].valueAt(i);
-    //var text = get_text(value);
-    //console.log(text);
-    //console.log(d3.select(this.dom_id).selectAll(".value").text());
-    //d3.select(this.dom_id).selectAll(".value").text(text);
-  }
+Horizon.prototype.get_value = function(i){
+  return get_text(i);
 }
 
 Horizon.prototype.create_metric = function(event){
@@ -49,7 +37,11 @@ Horizon.prototype.create_metric = function(event){
 
 Horizon.prototype.render = function(){
   var horizon = this.context.horizon();
-  horizon.format(d3.format(".3f"));
+  if(this.discrete){
+    horizon.format(this.get_value);
+  }else{
+    horizon.format(d3.format(".3f"));
+  }
   horizon.title(this.title);
   d3.select(this.dom_id).selectAll(".horizon")
     .data(this.events)
